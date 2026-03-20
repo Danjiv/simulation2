@@ -58,19 +58,25 @@ stfpkam_mle <- c(min(stfpkam), max(stfpkam))
 # will need to bin and Chi-Square test here.
 # will take the bins from the histogram
 stfpkam_breaks <- stfpkam_hist$breaks
-# get probs for expected values, assumig data comes from a uniform(4, 9.5) distribution
-stfpkam_probs <- punif(stfpkam_breaks, min = 4, max = 9.5)
+# bins are 0.5 apart - will try something more granular
+stfpkam_breaks2 <- seq(4, 9.5, 0.15)
+# get probs for expected values, assuming data comes from a uniform(4, 9.5) distribution
+stfpkam_probs <- punif(stfpkam_breaks2, min = 4, max = 9.5)
 #want the probability of a value falling within each bin
 stfpkam_probs2 <- stfpkam_probs[2:length(stfpkam_probs)]
 stfpkam_probs3 <- stfpkam_probs[1:length(stfpkam_probs)-1]
 stfpkam_probs4 <- stfpkam_probs2 - stfpkam_probs3
+#
+stfpkam_hist2 <- hist(stfpkam, breaks = stfpkam_breaks2)
 # get observed vals in each bin
-stfpkam_observed <- stfpkam_hist$counts
+stfpkam_observed <- stfpkam_hist2$counts
 # expected vals
+# all above 5
 stfpkam_expected <- length(stfpkam) * stfpkam_probs4
 #
 stfpkam_test_stat <- sum((stfpkam_observed - stfpkam_expected)**2 / stfpkam_expected)
-# degrees of freedom here are 8, there are 11 breaks, need to minus 3 for estimating two parameters
-pchisq(stfpkam_test_stat, 8, lower.tail=FALSE)
+# degrees of freedom here are 34, there are 37 breaks, need to minus 3 for estimating two parameters
+pchisq(stfpkam_test_stat, 34, lower.tail=FALSE)
+# alright, this is clearly wrong
 
 

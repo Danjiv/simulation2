@@ -52,31 +52,90 @@ stfip_exponential_test_stat_corrected <- (stfip_exponential_test$statistic - (0.
 # looking at service times for placing the keyboard and mouse
 stfpkam <- data2$service_times_for_placing_keyboard_and_mouse
 stfpkam_hist <- hist(stfpkam, breaks = "FD")
-# this looks roughly uniformly distributed - albeit very roughly
-# mle's here would be the min and max values
-stfpkam_mle <- c(min(stfpkam), max(stfpkam))
-# will need to bin and Chi-Square test here.
-# will take the bins from the histogram
-stfpkam_breaks <- stfpkam_hist$breaks
-# bins are 0.5 apart - will try something more granular
-stfpkam_breaks2 <- seq(4, 9.5, 0.15)
-# get probs for expected values, assuming data comes from a uniform(4, 9.5) distribution
-stfpkam_probs <- punif(stfpkam_breaks2, min = 4, max = 9.5)
-#want the probability of a value falling within each bin
-stfpkam_probs2 <- stfpkam_probs[2:length(stfpkam_probs)]
-stfpkam_probs3 <- stfpkam_probs[1:length(stfpkam_probs)-1]
-stfpkam_probs4 <- stfpkam_probs2 - stfpkam_probs3
+# this looks like a mix of rv's
+# take the max and min and add more bins to the histogram
+stfpkam_min <- min(stfpkam)
 #
-stfpkam_hist2 <- hist(stfpkam, breaks = stfpkam_breaks2)
-# get observed vals in each bin
-stfpkam_observed <- stfpkam_hist2$counts
-# expected vals
-# all above 5
-stfpkam_expected <- length(stfpkam) * stfpkam_probs4
+stfpkam_max <- max(stfpkam)
 #
-stfpkam_test_stat <- sum((stfpkam_observed - stfpkam_expected)**2 / stfpkam_expected)
-# degrees of freedom here are 34, there are 37 breaks, need to minus 3 for estimating two parameters
-pchisq(stfpkam_test_stat, 34, lower.tail=FALSE)
-# alright, this is clearly wrong
+#
+stfpkam_breaks <- seq(4.4, 9.3, 0.1)
+#
+stfpkam_hist2 <- hist(stfpkam, breaks = stfpkam_breaks)
+#
+# 1. looks very roughly, like there's a uniform distribution for x <= 6.7
+# 2. another uniform distrubiton for 6.7 < x <= 7.1
+# 3. a third uniform distribution for x > 7.1
+#
+# examining these in turn...
+# 1.
+stfpkam_dist1 <- stfpkam[stfpkam <= 6.7]
+#
+# have 91 obs, so if we want to keep the expected values above 5
+# will want a max of 18 bins
+#
+stfpkam_dist1_hist <- hist(stfpkam_dist1, breaks = seq(4.4, 6.7, (6.7-4.4)/18))
+#
+# running a chi-square test...
+stfpkam_dist1_expected <- length(stfpkam_dist1) * (1/18)
+#
+stfpkam_dist1_test <- sum((stfpkam_dist1_hist$counts - stfpkam_dist1_expected)**2 / stfpkam_dist1_expected)
+#
+# test will have 18 - 3 = 15 degrees of freedom, given we've estimated 2 parameters from the distribution
+#
+pchisq(stfpkam_dist1_test, 15, lower.tail = FALSE)
+#
+# which is clearly non-significant - so we look ok for this bit
+#
+# 2.
+stfpkam_dist2 <- stfpkam[stfpkam > 6.7 & stfpkam <= 7.1]
+# have 33 observations here, so will only manage 6 bins
+#
+stfpkam_dist2_hist <- hist(stfpkam_dist2, breaks = seq(6.7, 7.1, (7.1-6.7)/6))
+#
+# running a chi-square test...
+stfpkam_dist2_expected <- length(stfpkam_dist2) * (1/6)
+#
+stfpkam_dist2_test <- sum((stfpkam_dist2_hist$counts - stfpkam_dist2_expected)**2 / stfpkam_dist2_expected)
+#
+# out test here would have 3 degrees of freedom, 6 bins, estimated two parameters.
+pchisq(stfpkam_dist2_test, 3, lower.tail=FALSE)
+# which is clearly non-significant - so we look ok here!
 
+# 3.
+ stfpkam_dist3 <- stfpkam[stfpkam > 7.1]
+# 76 obs - max of 15 bins
+ stfpkam_dist3_hist <- hist(stfpkam_dist3, breaks = seq(7.1, max(stfpkam_dist3), (max(stfpkam_dist3)-7.1)/15))
+ #
+ # running a chi-square test...
+ #
+ stfpkam_dist3_expected <- length(stfpkam_dist3) * (1/15)
+ #
+ stfpkam_dist3_test <- sum((stfpkam_dist3_hist$counts - stfpkam_dist3_expected)**2 / stfpkam_dist3_expected)
+ #
+ # test will have 12 degrees of freedom; 15 bins, two parameters estimated.
+ pchisq(stfpkam_dist3_test, 12, lower.tail=FALSE)
+ # 
+ # again non-significant, so we look ok here!
+ 
+# looking at service times for assembling the case
+ 
+stfatc <- data2$service_times_for_assembling_the_case
+stfatc_hist <- hist(stfatc, breaks = "FD")
+# looks logNormal
 
+log_stfatc <- log(stfatc)
+log_stfatc_hist <- hist(log_stfatc, breaks = "FD")
+#
+# critical value at the 95% sig level for the KS test here will be 0.895
+log_stfatc_test <- ks.test(log_stfatc, "pnorm", mean = mean(log_stfatc), sd = sd(log_stfatc), alternative = "two.sided")
+#
+n <- length(log_stfatc)
+#
+log_stfatc_corrected_test <- (sqrt(n) - 0.01 + (0.85 / sqrt(n)))*log_stfatc_test$statistic
+#
+# yielding a correct test statistic of 0.622 - Therefore we can conclude the data comes from a log normal distribution
+mean_log_stfatc = mean(log_stfatc)
+#
+var_log_stfatc = var(log_stfatc)
+#

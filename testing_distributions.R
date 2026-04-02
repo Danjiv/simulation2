@@ -52,72 +52,26 @@ stfip_exponential_test_stat_corrected <- (stfip_exponential_test$statistic - (0.
 # looking at service times for placing the keyboard and mouse
 stfpkam <- data2$service_times_for_placing_keyboard_and_mouse
 stfpkam_hist <- hist(stfpkam, breaks = "FD")
-# this looks like a mix of rv's
-# take the max and min and add more bins to the histogram
+# this looks roughly as if it could be uniformly distributed
 stfpkam_min <- min(stfpkam)
 #
 stfpkam_max <- max(stfpkam)
 #
 #
-stfpkam_breaks <- seq(4.4, 9.3, 0.1)
+stfpkam_breaks <- seq(4.4, 9.3, (9.3-4.4)/40)
 #
 stfpkam_hist2 <- hist(stfpkam, breaks = stfpkam_breaks)
-#
-# 1. looks very roughly, like there's a uniform distribution for x <= 6.7
-# 2. another uniform distrubiton for 6.7 < x <= 7.1
-# 3. a third uniform distribution for x > 7.1
-#
-# examining these in turn...
-# 1.
-stfpkam_dist1 <- stfpkam[stfpkam <= 6.7]
-#
-# have 91 obs, so if we want to keep the expected values above 5
-# will want a max of 18 bins
-#
-stfpkam_dist1_hist <- hist(stfpkam_dist1, breaks = seq(4.4, 6.7, (6.7-4.4)/18))
-#
-# running a chi-square test...
-stfpkam_dist1_expected <- length(stfpkam_dist1) * (1/18)
-#
-stfpkam_dist1_test <- sum((stfpkam_dist1_hist$counts - stfpkam_dist1_expected)**2 / stfpkam_dist1_expected)
-#
-# test will have 18 - 3 = 15 degrees of freedom, given we've estimated 2 parameters from the distribution
-#
-pchisq(stfpkam_dist1_test, 15, lower.tail = FALSE)
-#
-# which is clearly non-significant - so we look ok for this bit
-#
-# 2.
-stfpkam_dist2 <- stfpkam[stfpkam > 6.7 & stfpkam <= 7.1]
-# have 33 observations here, so will only manage 6 bins
-#
-stfpkam_dist2_hist <- hist(stfpkam_dist2, breaks = seq(6.7, 7.1, (7.1-6.7)/6))
-#
-# running a chi-square test...
-stfpkam_dist2_expected <- length(stfpkam_dist2) * (1/6)
-#
-stfpkam_dist2_test <- sum((stfpkam_dist2_hist$counts - stfpkam_dist2_expected)**2 / stfpkam_dist2_expected)
-#
-# out test here would have 3 degrees of freedom, 6 bins, estimated two parameters.
-pchisq(stfpkam_dist2_test, 3, lower.tail=FALSE)
-# which is clearly non-significant - so we look ok here!
 
-# 3.
- stfpkam_dist3 <- stfpkam[stfpkam > 7.1]
-# 76 obs - max of 15 bins
- stfpkam_dist3_hist <- hist(stfpkam_dist3, breaks = seq(7.1, max(stfpkam_dist3), (max(stfpkam_dist3)-7.1)/15))
- #
- # running a chi-square test...
- #
- stfpkam_dist3_expected <- length(stfpkam_dist3) * (1/15)
- #
- stfpkam_dist3_test <- sum((stfpkam_dist3_hist$counts - stfpkam_dist3_expected)**2 / stfpkam_dist3_expected)
- #
- # test will have 12 degrees of freedom; 15 bins, two parameters estimated.
- pchisq(stfpkam_dist3_test, 12, lower.tail=FALSE)
- # 
- # again non-significant, so we look ok here!
- 
+stfpkam_expected <- length(stfpkam) * (1/40)
+
+stfpkam_test <- sum((stfpkam_hist2$counts - stfpkam_expected)**2 / stfpkam_expected)
+
+# Chi square test will have 40-3 = 37 degrees of freedom
+
+pchisq(stfpkam_test, 37, lower.tail = FALSE)
+
+# which is clearly non-significant, so we look ok for this bit!
+
 # looking at service times for assembling the case
  
 stfatc <- data2$service_times_for_assembling_the_case
